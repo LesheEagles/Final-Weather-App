@@ -1,28 +1,34 @@
-function refreshWeather(response) {
-  let temperatureElement = document.querySelector("#temperature");
+function displayWeather(response) {
+  let currentTemperature = document.querySelector("#temperature");
   let temperature = response.data.temperature.current;
-  let cityElement = document.querySelector("#city");
-  let descriptionElement = document.querySelector("#description");
-  let humidityElement = document.querySelector("#humidity");
-  let windSpeedElement = document.querySelector("#wind-speed");
-  let timeElement = document.querySelector("#time");
+  let currentCondition = document.querySelector("#description");
+  let condition = response.data.condition.description;
+  let currentHumidity = document.querySelector("#humidity");
+  let humidity = `${response.data.temperature.humidity}%`;
+  let currentWind = document.querySelector("#wind");
+  let wind = `${response.data.wind.speed}km/h`;
+  let currentCity = document.querySelector("#main-heading");
+  let city = response.data.city;
+  let currentIcon = document.querySelector("#weather-icon");
+  let icon = `<img src = "${response.data.condition.icon_url}" class ="weather-emoji"/>`;
+  let currentDaytime = document.querySelector("#daytime");
   let date = new Date(response.data.time * 1000);
-  let iconElement = document.querySelector("#icon");
+  let daytime = currentDate(date);
 
-  cityElement.innerHTML = response.data.city;
-  timeElement.innerHTML = formatDate(date);
-  descriptionElement.innerHTML = response.data.condition.description;
-  humidityElement.innerHTML = `${response.data.temperature.humidity}%`;
-  windSpeedElement.innerHTML = `${response.data.wind.speed}km/h`;
-  temperatureElement.innerHTML = Math.round(temperature);
-  iconElement.innerHTML = `<img src="${response.data.condition.icon_url}" class="weather-app-icon" />`;
+  currentCondition.innerHTML = condition;
+  currentHumidity.innerHTML = humidity;
+  currentWind.innerHTML = wind;
+  currentCity.innerHTML = city;
+  currentIcon.innerHTML = icon;
+  currentDaytime.innerHTML = daytime;
+  currentTemperature.innerHTML = Math.round(temperature);
 
-  getForecast(response.data.city);
+  fetchForecast(response.data.city);
 }
-
-function formatDate(date) {
-  let minutes = date.getMinutes();
+function currentDate(date) {
   let hours = date.getHours();
+  let minutes = date.getMinutes();
+
   let days = [
     "Sunday",
     "Monday",
@@ -31,71 +37,76 @@ function formatDate(date) {
     "Thursday",
     "Friday",
     "Saturday",
+    "Sunday",
   ];
+
   let day = days[date.getDay()];
+
+  if (hours < 10) {
+    hours = `0${hours}`;
+  }
 
   if (minutes < 10) {
     minutes = `0${minutes}`;
   }
 
-  return `${day} ${hours}:${minutes}`;
+  return `${day} ${hours}:${minutes},`;
 }
-
 function searchCity(city) {
-  let apiKey = "a4f302ccaf3b204cb26t8f848ba4659o";
-  let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
-  axios.get(apiUrl).then(refreshWeather);
+  let apiKey = "a9e857fe88f94odb09ad1fcdt90348f2";
+  let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}
+&key=${apiKey}&units=metric`;
+  axios.get(apiUrl).then(displayWeather);
 }
 
-function handleSearchSubmit(event) {
+function startSearch(event) {
   event.preventDefault();
-  let searchInput = document.querySelector("#search-form-input");
-
-  searchCity(searchInput.value);
+  let searchedInput = document.querySelector("#search-form-input");
+  searchCity(searchedInput.value);
 }
 
-function formatDay(timestamp) {
+function fetchForecast(city) {
+  let apiKey = "a9e857fe88f94odb09ad1fcdt90348f2";
+  let apiUrl = `https://api.shecodes.io/weather/v1/forecast?query=${city}
+&key=${apiKey}&units=metric`;
+  axios.get(apiUrl).then(displayForecast);
+}
+
+function fetchDay(timestamp) {
   let date = new Date(timestamp * 1000);
   let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return days[date.getDay()];
 }
 
-function getForecast(city) {
-  let apiKey = "a4f302ccaf3b204cb26t8f848ba4659o";
-  let apiUrl = `https://api.shecodes.io/weather/v1/forecast?query=${city}&key=${apiKey}&units=metric`;
-  axios(apiUrl).then(displayForecast);
-}
-
 function displayForecast(response) {
-  let forecastHtml = "";
+  theDays = response.data.daily;
 
-  response.data.daily.forEach(function (day, index) {
-    if (index < 6) {
-      forecastHtml =
-        forecastHtml +
-        `
-      <div class="weather-forecast-day">
-        <div class="weather-forecast-date">${formatDay(day.time)}</div>
-
-        <img src="${day.condition.icon_url}" class="weather-forecast-icon" />
-        <div class="weather-forecast-temperatures">
-          <div class="weather-forecast-temperature">
-            <strong>${Math.round(day.temperature.maximum)}º</strong>
-          </div>
-          <div class="weather-forecast-temperature">${Math.round(
-            day.temperature.minimum
-          )}º</div>
-        </div>
-      </div>
-    `;
+  let forecast = "";
+  theDays.forEach(function (day, index) {
+    if (index < 5) {
+      forecast =
+        forecast +
+        `<div class="forecast-day">
+            <div class="forecast-date">${fetchDay(day.time)}</div>
+           <img src = "${day.condition.icon_url}" class="forecast-icon"/>
+            
+            <div class="forecast-temperatures">
+              <div class="forecast-temperature"><strong>${Math.round(
+                day.temperature.maximum
+              )}°</strong></div>
+              <div class="forecast-temperature">${Math.round(
+                day.temperature.minimum
+              )}°</div>
+            </div>
+            </div>`;
     }
   });
-  let forecastElement = document.querySelector("#forecast");
-  forecastElement.innerHTML = forecastHtml;
+  let weatherForecast = document.querySelector("#forecast");
+  weatherForecast.innerHTML = forecast;
 }
 
-let searchFormElement = document.querySelector("#search-form");
-searchFormElement.addEventListener("submit", handleSearchSubmit);
+let searchForm = document.querySelector("#form-input");
+searchForm.addEventListener("submit", startSearch);
 
-searchCity("Centurion");
+searchCity("Cape Town");
